@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seyahat Rehberi</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-image: url('https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .location-card {
+            margin-bottom: 15px;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+        .rating {
+            color: #ffc107;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .modal-content {
+            background-color: rgba(255, 255, 255, 0.98);
+        }
+        /* Deneyim paylaşma modal stilleri */
+        #shareExperienceModal .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(167, 188, 175, 0.542);
+            background: linear-gradient(rgba(21, 35, 123, 0.95), rgba(12, 35, 153, 0.95)),
+                        url('./images/ntv.jpg') center/cover no-repeat;
+            position: relative;
+        }
+        #shareExperienceModal .modal-header {
+            border-radius: 15px 15px 0 0;
+            background: linear-gradient(135deg, #502c2c 0%, #2d1218 100%);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+        }
+        #shareExperienceModal .modal-body {
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 0 0 15px 15px;
+        }
+        #shareExperienceModal .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #shareExperienceModal .card-header {
+            background: rgba(80, 44, 44, 0.1);
+            border-bottom: 1px solid rgba(80, 44, 44, 0.2);
+        }
+        #shareExperienceModal .form-control,
+        #shareExperienceModal .form-select {
+            background: rgba(48, 152, 161, 0.9);
+            border: 1px solid rgba(80, 44, 44, 0.2);
+        }
+        #shareExperienceModal .form-control:focus,
+        #shareExperienceModal .form-select:focus {
+            background: rgba(46, 203, 203, 0.95);
+            border-color: #502c2c;
+            box-shadow: 0 0 0 0.25rem rgba(80, 44, 44, 0.25);
+        }
+        #shareExperienceModal .btn-primary {
+            background: linear-gradient(135deg, #502c2c 0%, #2d1218 100%);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        #shareExperienceModal .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(80, 44, 44, 0.3);
+        }
+        #shareExperienceModal .btn-outline-secondary {
+            border-color: #502c2c;
+            color: #502c2c;
+        }
+        #shareExperienceModal .btn-outline-secondary:hover {
+            background: #502c2c;
+            color: rgb(14, 100, 87);
+        }
+        #shareExperienceModal .rating {
+            font-size: 24px;
+            color: #666689;
+            cursor: pointer;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        #shareExperienceModal .rating .fas {
+            margin-right: 5px;
+            transition: all 0.2s ease;
+        }
+        #shareExperienceModal .rating .fas:hover,
+        #shareExperienceModal .rating .fas.active {
+            color: #502c2c;
+            transform: scale(1.1);
+        }
+        #shareExperienceModal .form-label {
+            color: #502c2c;
+            font-weight: 600;
+        }
+        #shareExperienceModal .form-text {
+            color: #666;
+        }
+        #shareExperienceModal .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        #shareExperienceModal .photo-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #shareExperienceModal .photo-preview img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid rgba(80, 44, 44, 0.2);
+            transition: all 0.3s ease;
+        }
+        #shareExperienceModal .photo-preview img:hover {
+            transform: scale(1.05);
+            border-color: #502c2c;
+        }
+        /* Animasyonlar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #shareExperienceModal .modal-content {
+            animation: fadeIn 0.3s ease-out;
+        }
+        #shareExperienceModal .card {
+            animation: fadeIn 0.4s ease-out;
+        }
+        #shareExperienceModal .form-group {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Seyahat Rehberi</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Map Section -->
+            <div class="col-md-8">
+                <div id="map"></div>
+                <!-- Recommended Cities Section -->
+                <div class="card mt-4 border-0 shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-star"></i> Önerilen Şehirler</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Balikesir -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="./images/balikesir.jpg" class="card-img-top" alt="Balikesir" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Balikesir</h5>
+                                        <p class="card-text">Kazdağı Milli Parkı, Şeytan Sofrası ve Ayvalık Adaları ile doğal güzelliklerin merkezi.</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Marmara Bölgesi</small>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Balikesir')">Detaylar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Bitlis -->
+<div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+        <img src="./images/bitlis.jpg" class="card-img-top" alt="Bitlis" style="height: 200px; object-fit: cover;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Bitlis</h5>
+            <p class="card-text">Nemrut Krater Gölü, Ahlat Selçuklu Mezarlığı ve tarihi kaleleriyle doğa ve tarihin iç içe geçtiği bir şehir.</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Doğu Anadolu Bölgesi</small>
+                <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Bitlis')">Detaylar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+                            <!-- Zonguldak -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="./images/zonguldak.jpg" class="card-img-top" alt="Zonguldak" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Zonguldak</h5>
+                                        <p class="card-text">Gökgöl Mağarası ve Kapuz Plajı ile doğal güzelliklerin buluştuğu şehir.</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Karadeniz Bölgesi</small>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Zonguldak')">Detaylar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Aydın -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="./images/Aydın.jpg" class="card-img-top" alt="Aydın" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Aydın</h5>
+                                        <p class="card-text">Efes Antik Kenti ve Dilek Yarımadası ile tarih ve doğanın buluştuğu yer.</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Ege Bölgesi</small>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Aydin')">Detaylar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Ardahan -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="./images/ardahan.jpg" class="card-img-top" alt="Ardahan" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Ardahan</h5>
+                                        <p class="card-text">Çıldır Gölü ve Posof Vadisi ile doğal güzelliklerin başkenti.</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Doğu Anadolu Bölgesi</small>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Ardahan')">Detaylar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Elazığ -->
+<div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+        <img src="./images/Elazıg.jpg" class="card-img-top" alt="Elazığ" style="height: 200px; object-fit: cover;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Elazığ</h5>
+            <p class="card-text">Harput Kalesi, Hazar Gölü ve zengin kültürel mirasıyla tarihi ve doğal güzellikleri bir arada sunar.</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Doğu Anadolu Bölgesi</small>
+                <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Elazığ')">Detaylar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Konya -->
+<div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+        <img src="./images/konya.jpg" class="card-img-top" alt="Konya" style="height: 200px; object-fit: cover;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Konya</h5>
+            <p class="card-text">Mevlana'nın şehri, Selçuklu mirasıyla kültür ve tarih dolu bir merkez.</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="fas fa-map-marker-alt"></i> İç Anadolu Bölgesi</small>
+                <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Konya')">Detaylar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+                            <!-- Artvin -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="./images/artvin.jpg" class="card-img-top" alt="Artvin" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Artvin</h5>
+                                        <p class="card-text">Kaçkar Dağları ve Yusufeli Vadisi ile doğanın kalbi.</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Karadeniz Bölgesi</small>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showCityInfo('Artvin')">Detaylar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Deneyim Paylaşma Kartı -->
+                <div class="card">
+                    <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+                        <h5 class="mb-0"><i class="fas fa-share-alt"></i> Deneyimlerimi Paylaş</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <img src="./images/ntv1.jpg" alt="Deneyim Paylaş" class="img-fluid rounded mb-3" style="max-height: 400px; width: auto;">
+                            <p class="card-text">Seyahat deneyimlerinizi diğer gezginlerle paylaşın, onların da sizin deneyimlerinizden faydalanmasını sağlayın!</p>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#shareExperienceModal">
+                                <img src="./images/ntv.jpg" alt="Deneyim Paylaş" class="img-fluid rounded mb-3" style="max-height: 100px; width: auto;">
+                                <i class="fas fa-pen-fancy me-2"></i>Yeni Deneyim Paylaş
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#myExperiencesModal">
+                                <i class="fas fa-history me-2"></i>Deneyimlerimi Görüntüle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deneyim Paylaşma Modal -->
+    <div class="modal fade" id="shareExperienceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-pen-fancy me-2"></i>
+                        Seyahat Deneyiminizi Paylaşın
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="experienceForm">
+                        <!-- Şehir ve Tarih Seçimi -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="fas fa-city me-2"></i>Şehir</label>
+                                <select class="form-select" required>
+                                    <option value="">Şehir Seçin</option>
+                                    <option value="Konya">Konya</option>
+                                    <option value="Balikesir">Balıkesir</option>
+                                    <option value="Bitlis">Bitlis</option>
+                                    <option value="Zonguldak">Zonguldak</option>
+                                    <option value="Aydin">Aydın</option>
+                                    <option value="Ardahan">Ardahan</option>
+                                    <option value="Elazig">Elazığ</option>
+                                    <option value="Artvin">Artvin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="fas fa-calendar-alt me-2"></i>Ziyaret Tarihi</label>
+                                <input type="date" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <!-- Başlık ve Kategori -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label"><i class="fas fa-heading me-2"></i>Başlık</label>
+                                <input type="text" class="form-control" placeholder="Deneyiminize kısa ve çarpıcı bir başlık verin" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label"><i class="fas fa-tags me-2"></i>Kategori</label>
+                                <select class="form-select" required>
+                                    <option value="">Kategori Seçin</option>
+                                    <option value="tarihi">Tarihi Gezi</option>
+                                    <option value="doga">Doğa Gezisi</option>
+                                    <option value="kultur">Kültür Turu</option>
+                                    <option value="yemek">Yemek Turu</option>
+                                    <option value="macera">Macera Turu</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Deneyim Detayları -->
+                        <div class="mb-4">
+                            <label class="form-label"><i class="fas fa-book-open me-2"></i>Deneyiminiz</label>
+                            <div class="form-floating">
+                                <textarea class="form-control" id="experienceText" style="height: 200px" placeholder="Seyahat deneyiminizi detaylı bir şekilde anlatın..." required></textarea>
+                                <label for="experienceText">Deneyiminizi buraya yazın...</label>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Deneyiminizi anlatırken şunlara değinmeyi unutmayın:
+                                <ul class="mt-2">
+                                    <li>Gezdiğiniz yerler ve gördüğünüz şeyler</li>
+                                    <li>Yaşadığınız ilginç anılar</li>
+                                    <li>Önerileriniz ve tavsiyeleriniz</li>
+                                    <li>Dikkat edilmesi gereken noktalar</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Konaklama ve Yemek -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <label class="form-label mb-0"><i class="fas fa-hotel me-2"></i>Konaklama Bilgileri</label>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <input type="text" class="form-control" placeholder="Kaldığınız otel veya pansiyon">
+                                        </div>
+                                        <div class="mb-3">
+                                            <input type="number" class="form-control" placeholder="Gecelik fiyat (TL)">
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="recommendStay">
+                                            <label class="form-check-label" for="recommendStay">
+                                                Bu konaklama yerini öneriyorum
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <label class="form-label mb-0"><i class="fas fa-utensils me-2"></i>Yemek Mekanları</label>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <input type="text" class="form-control" placeholder="Yemek yediğiniz restoran">
+                                        </div>
+                                        <div class="mb-3">
+                                            <input type="text" class="form-control" placeholder="Yediğiniz yemekler">
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="recommendFood">
+                                            <label class="form-check-label" for="recommendFood">
+                                                Bu mekanı öneriyorum
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fotoğraflar -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <label class="form-label mb-0"><i class="fas fa-images me-2"></i>Fotoğraflar</label>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" multiple accept="image/*" id="experiencePhotos">
+                                    <div class="form-text">En fazla 5 fotoğraf yükleyebilirsiniz. Her fotoğraf en fazla 5MB olmalıdır.</div>
+                                </div>
+                                <div class="row" id="photoPreview">
+                                    <!-- Fotoğraf önizlemeleri buraya gelecek -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Değerlendirme -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <label class="form-label mb-0"><i class="fas fa-star me-2"></i>Değerlendirmeniz</label>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Genel Puan</label>
+                                        <div class="rating">
+                                            <i class="fas fa-star" data-rating="1"></i>
+                                            <i class="fas fa-star" data-rating="2"></i>
+                                            <i class="fas fa-star" data-rating="3"></i>
+                                            <i class="fas fa-star" data-rating="4"></i>
+                                            <i class="fas fa-star" data-rating="5"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Konaklama</label>
+                                        <div class="rating">
+                                            <i class="fas fa-star" data-rating="1"></i>
+                                            <i class="fas fa-star" data-rating="2"></i>
+                                            <i class="fas fa-star" data-rating="3"></i>
+                                            <i class="fas fa-star" data-rating="4"></i>
+                                            <i class="fas fa-star" data-rating="5"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Yemek</label>
+                                        <div class="rating">
+                                            <i class="fas fa-star" data-rating="1"></i>
+                                            <i class="fas fa-star" data-rating="2"></i>
+                                            <i class="fas fa-star" data-rating="3"></i>
+                                            <i class="fas fa-star" data-rating="4"></i>
+                                            <i class="fas fa-star" data-rating="5"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Etiketler ve Gizlilik -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label"><i class="fas fa-tags me-2"></i>Etiketler</label>
+                                <input type="text" class="form-control" placeholder="Örn: tarihi yerler, doğa, yemek (virgülle ayırın)">
+                                <div class="form-text">Etiketler, deneyiminizin daha kolay bulunmasını sağlar.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <label class="form-label mb-0"><i class="fas fa-eye me-2"></i>Gizlilik</label>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="anonymousCheck">
+                                            <label class="form-check-label" for="anonymousCheck">
+                                                Anonim olarak paylaş
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="privateCheck">
+                                            <label class="form-check-label" for="privateCheck">
+                                                Sadece arkadaşlarımla paylaş
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Deneyimi Paylaş
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deneyimlerimi Görüntüle Modal -->
+    <div class="modal fade" id="myExperiencesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Deneyimlerim</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <!-- Örnek deneyim kartları -->
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">Konya'da Mevlana'yı Keşfetmek</h5>
+                                <small class="text-muted">3 gün önce</small>
+                            </div>
+                            <p class="mb-1">Mevlana Müzesi'ni ziyaret ettim ve tarihi atmosferi soludum...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Konya</small>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary">Düzenle</button>
+                                    <button class="btn btn-sm btn-outline-danger">Sil</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Diğer deneyimler buraya eklenecek -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="harita.js"></script>
+
+    <script>
+        // Mevcut scriptler
+        // ... existing code ...
+
+        // Fotoğraf önizleme
+        document.getElementById('experiencePhotos').addEventListener('change', function(e) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+            preview.className = 'photo-preview';
+            
+            if (this.files) {
+                Array.from(this.files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.title = file.name;
+                            preview.appendChild(img);
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+
+        // Yıldız derecelendirme sistemi
+        document.querySelectorAll('.rating').forEach(ratingContainer => {
+            const stars = ratingContainer.querySelectorAll('.fas');
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = this.getAttribute('data-rating');
+                    stars.forEach(s => {
+                        if (s.getAttribute('data-rating') <= rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        });
+
+        // Form gönderimi
+        document.getElementById('experienceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Paylaşılıyor...';
+            submitBtn.disabled = true;
+
+            // Simüle edilmiş form gönderimi
+            setTimeout(() => {
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Başarıyla Paylaşıldı!';
+                setTimeout(() => {
+                    $('#shareExperienceModal').modal('hide');
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Deneyimi Paylaş';
+                    submitBtn.disabled = false;
+                }, 1000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
